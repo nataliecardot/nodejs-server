@@ -35,6 +35,30 @@ const server = http.createServer((req, res) => {
       break;
   }
 
+  // Read file (computes the whole file and then sends it to content)
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      if (err.code == 'ENOENT') {
+        // Page not found
+        fs.readFile(path.join(__dirname, 'public', '404.html'), (err, content) => {
+          res.writeHead(200, { 'Content-type': 'text/html' });
+          res.end(content, 'utf8');
+        });
+      }
+      else {
+        // Some server error (most likely 500, meaning server cannot process the request for an unknown reason)
+        res.writeHead(500);
+        res.end(`Server error: ${err.code}`)
+      }
+    }
+      else {
+        // Successful response
+        res.writeHead(200, { 'Content-Type': contentType });
+        // Signals to the server that all of the response headers and body have been sent; that server should consider this message complete. If data is specified (as it is here, with content), it is similar in effect to calling response.write(data, encoding) followed by response.end(callback)
+        res.end(content, 'utf8');
+      }
+  });
+
   // Commented out because not dynamic; have to have req.url for each url
   // if (req.url === '/') {
   //   fs.readFile(path.join(__dirname, 'public', 'index.html'), (err, content) => {
@@ -51,6 +75,7 @@ const server = http.createServer((req, res) => {
   //     { name: 'John Doe', age: 30 }
   //   ];
   //   res.writeHead(200, { 'Content-Type': 'application/json' });
+  //   // When sending data to a web server, the data has to be a string
   //   res.end(JSON.stringify(users));
   // }
 
